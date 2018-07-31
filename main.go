@@ -33,12 +33,13 @@ func init() {
 
 	flag.Parse()
 
-	imgPath = flag.Args()[0]
-
 	if len(flag.Args()) < 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	imgPath = flag.Args()[0]
+
 }
 
 func main() {
@@ -46,6 +47,7 @@ func main() {
 	locked := true
 	encHeader := ""
 
+	// Init image contents with encrypted passphrase
 	if wipe {
 		fmt.Print("Enter password to encrypt file: ")
 		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
@@ -54,11 +56,15 @@ func main() {
 		key = []byte(hash(string(bytePassword)))
 
 		clearFile(key, imgPath)
-		// os.Exit(0)
 	}
 
 	// Get text in the image
 	text := image.RevealTextInImage(imgPath)
+
+	if !strings.Contains(text, ":") {
+		fmt.Printf("%s is not a configured file, use the \"-init\" flag.", imgPath)
+		os.Exit(1)
+	}
 
 	// Loop until correct key is provided
 	for locked {
@@ -82,12 +88,14 @@ func main() {
 	content, err := decrypt(key, encContent)
 	check(err)
 
+	// Create text edit box
 	buffer := tui.NewTextEdit()
 	buffer.SetSizePolicy(tui.Expanding, tui.Expanding)
 	buffer.SetText(content)
 	buffer.SetFocused(true)
 	buffer.SetWordWrap(true)
 
+	// Create status bar with file name
 	status := tui.NewStatusBar(imgPath)
 
 	root := tui.NewVBox(buffer, status)
@@ -108,6 +116,7 @@ func main() {
 	}
 }
 
+// Get key from stdin
 func getKey() []byte {
 	// Get password
 	fmt.Print("Enter Password: ")
@@ -120,6 +129,7 @@ func getKey() []byte {
 	return key
 }
 
+// Encrypts text with key
 func encrypt(key []byte, message string) (encmess string, err error) {
 	plainText := []byte(message)
 
@@ -128,8 +138,6 @@ func encrypt(key []byte, message string) (encmess string, err error) {
 		return
 	}
 
-	//IV needs to be unique, but doesn't have to be secure.
-	//It's common to put it at the beginning of the ciphertext.
 	cipherText := make([]byte, aes.BlockSize+len(plainText))
 	iv := cipherText[:aes.BlockSize]
 	if _, err = io.ReadFull(rand.Reader, iv); err != nil {
@@ -141,21 +149,20 @@ func encrypt(key []byte, message string) (encmess string, err error) {
 
 	//returns to base64 encoded string
 	encmess = base64.URLEncoding.EncodeToString(cipherText)
-	// encmess = base64.StdEncoding.EncodeToString(cipherText)
+
 	return
 }
 
+// Decrypts text with key
 func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	if len(securemess) == 0 {
-		decodedmess = ""
 		return
 	}
 
 	cipherText, err := base64.URLEncoding.DecodeString(securemess)
 	if err != nil {
-		err = nil
-		decodedmess = ""
-		clearFile(key, imgPath)
+		fmt.Printf("%s is not a configured file, use the \"-init\" flag.", imgPath)
+		os.Exit(1)
 		return
 	}
 
@@ -169,8 +176,6 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 		return
 	}
 
-	//IV needs to be unique, but doesn't have to be secure.
-	//It's common to put it at the beginning of the ciphertext.
 	iv := cipherText[:aes.BlockSize]
 	cipherText = cipherText[aes.BlockSize:]
 
@@ -179,6 +184,7 @@ func decrypt(key []byte, securemess string) (decodedmess string, err error) {
 	stream.XORKeyStream(cipherText, cipherText)
 
 	decodedmess = string(cipherText)
+
 	return
 }
 
@@ -189,6 +195,7 @@ func check(err error) {
 	}
 }
 
+// Returns md5sum of string
 func hash(str string) (hash string) {
 	hasher := md5.New()
 	hasher.Write([]byte(str))
@@ -196,6 +203,7 @@ func hash(str string) (hash string) {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// Reset file with encrypted header
 func clearFile(key []byte, imgPath string) {
 	header, err := encrypt(key, validHeader)
 	check(err)
