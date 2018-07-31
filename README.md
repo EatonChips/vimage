@@ -7,7 +7,7 @@ You ever get stressed out about someone discovering your encrypted text files fu
 If you're cool and already have go installed...
 
 ```
-go get github.com/eatonchips/vimage
+go install github.com/eatonchips/vimage
 ```
 
 There are also binaries that will soon available in the releases tab. This has only been tested on Linux and Windows.
@@ -32,7 +32,7 @@ To close the editor and save the contents, press the ESCAPE key.
 
 Give it a test run with the provided cat pic (password is "pass"):
 
-```bash
+```
 vimage ./cat.jpg
 
 vimage -init ./cat.jpg
