@@ -14,7 +14,7 @@ There are also binaries that will soon available in the releases tab. This has o
 
 ## Usage
 
-This is fairly straigtforward...
+This is fairly straightforward...
 
 ```
 vimage [pathToFile]
