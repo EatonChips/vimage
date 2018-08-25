@@ -10,7 +10,7 @@ If you're cool and already have go installed...
 go install github.com/eatonchips/vimage
 ```
 
-There are also binaries that will soon available in the releases tab. This has only been tested on Linux and Windows.
+There are also binaries that are available in the releases tab.
 
 ## Usage
 
